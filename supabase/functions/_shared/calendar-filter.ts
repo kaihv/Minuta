@@ -1,8 +1,11 @@
 // ¿Tiene sentido mandar el bot a este evento del calendario? Reglas puras, con
 // pruebas en calendar-filter.test.ts.
+
+import { validMeetingUrl } from "./meeting-url.ts";
 //
 // Google le pone enlace de Meet a casi cualquier evento, así que "tiene enlace"
-// no significa "es una reunión". Por defecto las reuniones internas SÍ se
+// no significa "es una reunión". Los enlaces de Teams, Zoom y Webex no vienen en
+// conferenceData: se buscan en la ubicación y en la descripción de la invitación. Por defecto las reuniones internas SÍ se
 // graban; el interruptor `bot_settings.skip_internal_meetings` (Ajustes) las
 // salta si todos los invitados son del dominio interno.
 
@@ -31,6 +34,8 @@ export interface CalendarEvent {
 
 export interface FilterSettings {
   excludedEmails?: string[];
+  /** Palabras que, si aparecen en el título, la ubicación o la descripción, excluyen el evento. */
+  excludedKeywords?: string[];
   skipInternalMeetings?: boolean;
   internalDomain?: string;
   /** Correo de la cuenta de Google dueña del calendario (si se conoce). */
@@ -47,18 +52,44 @@ export type SkipReason =
   | "everyone_declined"
   | "in_person"
   | "excluded_email"
+  | "excluded_keyword"
   | "external_not_accepted"
   | "internal_disabled_by_admin";
 
 export type BotDecision = { send: true; meetingUrl: string } | { send: false; reason: SkipReason; detail?: string };
 
-/** Enlace de videollamada del evento (hoy solo Google Meet). */
+const URL_IN_TEXT = /https:\/\/[^\s"'<>()\]]+/gi;
+
+/** Primer enlace de videollamada válido (Meet, Zoom, Teams, Webex) dentro de un texto. */
+export function meetingUrlInText(text?: string | null): string | null {
+  if (!text) return null;
+  const decoded = text.replace(/&amp;/gi, "&");
+  for (const m of decoded.matchAll(URL_IN_TEXT)) {
+    const url = validMeetingUrl(m[0].replace(/[.,;:]+$/, ""));
+    if (url) return url;
+  }
+  return null;
+}
+
+/** Enlace de videollamada del evento: Meet de Google o, si no hay, Teams/Zoom/Webex en ubicación o descripción. */
 export function videoLink(event: CalendarEvent): string | null {
   if (event.hangoutLink) return event.hangoutLink;
   const entry = event.conferenceData?.entryPoints?.find(
-    (ep) => ep.entryPointType === "video" && ep.uri?.includes("meet.google.com"),
+    (ep) => ep.entryPointType === "video" && !!validMeetingUrl(ep.uri),
   );
-  return entry?.uri ?? null;
+  if (entry?.uri) return entry.uri;
+  return meetingUrlInText(event.location) ?? meetingUrlInText(event.description);
+}
+
+/** Minúsculas y sin tildes, para comparar palabras excluidas. */
+export function normalizeText(s?: string | null): string {
+  return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+/** Primera palabra excluida que aparece en el título, la ubicación o la descripción del evento. */
+export function excludedKeywordIn(event: CalendarEvent, keywords: string[] = []): string | null {
+  const text = normalizeText([event.summary, event.location, event.description].join(" "));
+  return keywords.map((k) => k.trim()).filter(Boolean).find((k) => text.includes(normalizeText(k))) ?? null;
 }
 
 const VIRTUAL_HINTS = ["meet.google.com", "zoom.us", "teams.microsoft.com", "webex.com", "whereby.com", "http://", "https://"];
@@ -81,6 +112,9 @@ const lower = (s?: string | null) => (s ?? "").trim().toLowerCase();
 export function decideBot(event: CalendarEvent, settings: FilterSettings = {}): BotDecision {
   if (event.status === "cancelled") return { send: false, reason: "cancelled" };
   if (!event.start?.dateTime) return { send: false, reason: "all_day" };
+  // Antes que todo lo demás: un evento con una palabra excluida nunca se graba.
+  const keyword = excludedKeywordIn(event, settings.excludedKeywords);
+  if (keyword) return { send: false, reason: "excluded_keyword", detail: keyword };
   if (event.eventType && !["default", "fromGmail"].includes(event.eventType)) {
     return { send: false, reason: "not_a_meeting", detail: event.eventType };
   }

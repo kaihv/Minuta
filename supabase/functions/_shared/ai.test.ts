@@ -77,8 +77,8 @@ Deno.test("normalizeSummary: limpia, valida fechas y quita enlaces/correos de lo
   });
   assertEquals(s.executive_summary, "- Se revisó el pedido");
   assertEquals(s.action_items, [
-    { task: "Enviar cotización a [correo omitido]", assignee: "Ana", due_date: "2026-11-10" },
-    { task: "Revisar [enlace omitido]", assignee: null, due_date: null },
+    { task: "Enviar cotización a [correo omitido]", assignee: "Ana", due_date: "2026-11-10", evidence: null },
+    { task: "Revisar [enlace omitido]", assignee: null, due_date: null, evidence: null },
   ]);
   assertEquals(s.decisions, ["Subir el precio"]);
   assertEquals(s.topics, []);
@@ -112,4 +112,15 @@ Deno.test("fitTranscript: conserva inicio y final", () => {
   const out = fitTranscript(t, 100);
   assert(out.startsWith("a") && out.endsWith("b") && out.length < 140);
   assertEquals(fitTranscript("corto"), "corto");
+});
+
+Deno.test("normalizeSummary: evidencia del compromiso y temas sin acuerdo", () => {
+  const s = normalizeSummary({
+    executive_summary: "- Se revisó el pedido",
+    action_items: [{ task: "Mandar la respuesta al proveedor", assignee: "Pedro", due_date: null, evidence: "[07:58] ya, yo lo envío" }],
+    discussed_without_agreement: ["Cambiar de proveedor: quedó como opción", ""],
+  });
+  assertEquals(s.action_items[0].evidence, "[07:58] ya, yo lo envío");
+  assertEquals(s.discussed_without_agreement, ["Cambiar de proveedor: quedó como opción"]);
+  assertEquals(normalizeSummary({ executive_summary: "- x" }).discussed_without_agreement, []);
 });

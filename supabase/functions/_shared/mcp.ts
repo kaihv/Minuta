@@ -19,9 +19,10 @@ export interface MeetingLite {
   attendees?: unknown;
   summary?: {
     executive_summary?: string;
-    action_items?: Array<{ task: string; assignee: string | null; due_date: string | null }>;
+    action_items?: Array<{ task: string; assignee: string | null; due_date: string | null; evidence?: string | null }>;
     decisions?: string[];
     topics?: string[];
+    discussed_without_agreement?: string[];
   } | null;
 }
 
@@ -133,9 +134,12 @@ export function describeMeeting(m: MeetingLite, appUrl?: string | null): string 
   }
   out.push("", "## Resumen", s.executive_summary);
   if (s.action_items?.length) {
-    out.push("", "## Compromisos", ...s.action_items.map((a) => `- ${a.task} (${a.assignee ?? "sin responsable"}${a.due_date ? `, ${a.due_date}` : ""})`));
+    out.push("", "## Compromisos", ...s.action_items.map((a) => `- ${a.task} (${a.assignee ?? "sin responsable"}${a.due_date ? `, ${a.due_date}` : ""})${a.evidence ? ` — «${a.evidence}»` : ""}`));
   }
   if (s.decisions?.length) out.push("", "## Decisiones", ...s.decisions.map((d) => `- ${d}`));
+  if (s.discussed_without_agreement?.length) {
+    out.push("", "## Temas conversados, sin acuerdo", ...s.discussed_without_agreement.map((d) => `- ${d}`));
+  }
   if (s.topics?.length) out.push("", `Temas: ${s.topics.join(", ")}`);
   return out.join("\n");
 }
