@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
       const items = ((await res.json()).items ?? []) as CalendarEvent[];
 
       const [{ data: settings }, { data: exclusions }] = await Promise.all([
-        db.from("bot_settings").select("excluded_emails, skip_internal_meetings, internal_domain").limit(1).maybeSingle(),
+        db.from("bot_settings").select("excluded_emails, excluded_keywords, skip_internal_meetings, internal_domain").limit(1).maybeSingle(),
         db.from("meeting_exclusions").select("calendar_event_id").eq("user_id", userId),
       ]);
       const excluded = new Set((exclusions ?? []).map((e: { calendar_event_id: string }) => e.calendar_event_id));
@@ -198,6 +198,7 @@ Deno.serve(async (req) => {
         .map((e) => {
           const d = decideBot(e, {
             excludedEmails: settings?.excluded_emails ?? [],
+            excludedKeywords: settings?.excluded_keywords ?? [],
             skipInternalMeetings: settings?.skip_internal_meetings ?? false,
             internalDomain: settings?.internal_domain ?? "",
             selfEmail: access.calendarId,

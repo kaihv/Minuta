@@ -238,6 +238,7 @@ async function runScheduler(supabase: Db): Promise<RunSummary> {
 
   const recall = recallClientFromEnv();
   const excludedEmails = (botSettings?.excluded_emails as string[]) || [];
+  const excludedKeywords = (botSettings?.excluded_keywords as string[]) || [];
   const skipInternal = botSettings?.skip_internal_meetings ?? false;
   const internalDomain = botSettings?.internal_domain ?? "";
 
@@ -257,6 +258,7 @@ async function runScheduler(supabase: Db): Promise<RunSummary> {
       const needsSelf = (event.attendees ?? []).length > 0 && !(event.attendees ?? []).some((a) => a.self === true);
       const decision = decideBot(event, {
         excludedEmails,
+        excludedKeywords,
         skipInternalMeetings: skipInternal,
         internalDomain,
         selfEmail: needsSelf ? await accountEmailOf(connection.user_id) : null,

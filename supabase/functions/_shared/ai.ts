@@ -156,9 +156,11 @@ export function aiClient(opts: { provider: AiProvider; apiKey: string; model: st
     const data = await post(
       "https://api.anthropic.com/v1/messages",
       { "x-api-key": opts.apiKey, "anthropic-version": "2023-06-01" },
-      { model: opts.model, max_tokens: maxTokens, temperature: 0.2, system, messages },
+      // Sin temperature: los modelos Claude 5.x responden 400 si se manda (y desde 2026-10-21, todos).
+      { model: opts.model, max_tokens: maxTokens, system, messages },
       timeoutMs,
     );
+    if (data?.stop_reason === "refusal") throw new AiError("Claude declinó la solicitud (refusal)");
     // deno-lint-ignore no-explicit-any
     const text = (data?.content ?? []).filter((b: any) => b?.type === "text").map((b: any) => b.text).join("");
     const u = data?.usage ?? {};

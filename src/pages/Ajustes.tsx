@@ -74,6 +74,7 @@ const SKIP_TEXT: Record<string, string> = {
   in_person: "presencial",
   not_a_meeting: "no es reunión",
   excluded_email: "invitado excluido",
+  excluded_keyword: "palabra excluida",
   internal_disabled_by_admin: "interna",
   external_not_accepted: "invitación externa sin aceptar",
   excluded_by_user: "la excluiste",
@@ -212,6 +213,7 @@ interface Settings {
   internal_domain: string | null;
   skip_internal_meetings: boolean;
   excluded_emails: string[];
+  excluded_keywords: string[];
   allowed_email_domains: string[];
   admin_emails: string[];
   summary_context: string | null;
@@ -220,6 +222,8 @@ interface Settings {
 }
 
 const list = (s: string) => s.split(/[,\s]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+// Las palabras excluidas pueden traer espacios ("no grabar"): se separan solo por coma.
+const words = (s: string) => s.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 
 function Installation() {
   const qc = useQueryClient();
@@ -228,7 +232,7 @@ function Installation() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bot_settings")
-        .select("bot_name, internal_domain, skip_internal_meetings, excluded_emails, allowed_email_domains, admin_emails, summary_context, daily_bot_limit, daily_ai_limit")
+        .select("bot_name, internal_domain, skip_internal_meetings, excluded_emails, excluded_keywords, allowed_email_domains, admin_emails, summary_context, daily_bot_limit, daily_ai_limit")
         .eq("id", 1)
         .single();
       if (error) throw error;
@@ -240,6 +244,7 @@ function Installation() {
     internal_domain: string;
     skip: boolean;
     excluded: string;
+    keywords: string;
     allowed: string;
     admins: string;
     context: string;
@@ -255,6 +260,7 @@ function Installation() {
         internal_domain: s.internal_domain ?? "",
         skip: s.skip_internal_meetings,
         excluded: s.excluded_emails.join(", "),
+        keywords: (s.excluded_keywords ?? []).join(", "),
         allowed: s.allowed_email_domains.join(", "),
         admins: s.admin_emails.join(", "),
         context: s.summary_context ?? "",
@@ -274,6 +280,7 @@ function Installation() {
           internal_domain: f.internal_domain.trim().toLowerCase().replace(/^@/, "") || null,
           skip_internal_meetings: f.skip,
           excluded_emails: list(f.excluded),
+          excluded_keywords: words(f.keywords),
           allowed_email_domains: list(f.allowed).map((d) => d.replace(/^@/, "")),
           admin_emails: list(f.admins),
           summary_context: f.context.trim() || null,
@@ -326,6 +333,13 @@ function Installation() {
         </div>
         <Field label="Nunca grabar reuniones con estos correos" htmlFor="exc" hint="Separados por coma.">
           <Input id="exc" value={form.excluded} onChange={(e) => set({ excluded: e.target.value })} />
+        </Field>
+        <Field
+          label="Nunca grabar eventos que digan"
+          htmlFor="kw"
+          hint="Separadas por coma. Se buscan en el título, la ubicación y la descripción, sin importar tildes ni mayúsculas. Ej: médico, [no grabar]."
+        >
+          <Input id="kw" value={form.keywords} onChange={(e) => set({ keywords: e.target.value })} />
         </Field>
         <Field
           label="Quién puede crear cuenta"

@@ -323,7 +323,10 @@ function SummaryView({
             <ul className="divide-y divide-border">
               {s.action_items.map((a, i) => (
                 <li key={i} className="grid gap-1 px-4 py-3 sm:grid-cols-[1fr_10rem_7rem] sm:gap-4">
-                  <span>{a.task}</span>
+                  <span>
+                    {a.task}
+                    {a.evidence && <span className="mt-0.5 block text-sm italic text-muted-foreground">«{a.evidence}»</span>}
+                  </span>
                   <span className="flex gap-3 text-sm text-muted-foreground sm:contents sm:text-[15px]">
                     <span>{a.assignee ?? "Sin responsable"}</span>
                     <span className="num">{dueDate(a.due_date)}</span>
@@ -339,6 +342,13 @@ function SummaryView({
         <section>
           <h2>Decisiones</h2>
           <Bullets items={s.decisions} className="mt-3" />
+        </section>
+      )}
+
+      {(s.discussed_without_agreement ?? []).length > 0 && (
+        <section>
+          <h2>Temas conversados, sin acuerdo</h2>
+          <Bullets items={s.discussed_without_agreement ?? []} className="mt-3" />
         </section>
       )}
 

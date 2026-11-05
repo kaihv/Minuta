@@ -146,3 +146,40 @@ Deno.test("invitación externa sin aceptar no se graba (si hay dominio configura
   });
   assertEquals(reason(aceptada, { internalDomain: "miempresa.example" }), "send");
 });
+
+// --- Teams/Zoom/Webex desde la invitación y exclusión por palabras ---
+
+Deno.test("Teams en la descripción (HTML de Outlook) se graba con ese enlace", () => {
+  const teams = base({
+    hangoutLink: undefined,
+    description: '<p>Reunión de Microsoft Teams</p><a href="https://teams.microsoft.com/l/meetup-join/19%3ameeting_abc%40thread.v2/0?context=%7b%22Tid%22%3a%22x%22%7d&amp;btype=a">Únase ahora</a>',
+  });
+  const d = decideBot(teams);
+  assertEquals(d.send, true);
+  assertEquals(d.send && d.meetingUrl.startsWith("https://teams.microsoft.com/l/meetup-join/"), true);
+  assertEquals(d.send && d.meetingUrl.includes("&btype=a"), true);
+});
+
+Deno.test("Zoom en la ubicación y Webex en la descripción también", () => {
+  assertEquals(decideBot(base({ hangoutLink: undefined, location: "https://us02web.zoom.us/j/123456789?pwd=abc" })),
+    { send: true, meetingUrl: "https://us02web.zoom.us/j/123456789?pwd=abc" });
+  assertEquals(reason(base({ hangoutLink: undefined, description: "Únete: https://miempresa.webex.com/meet/ana." })), "send");
+});
+
+Deno.test("enlaces que imitan una plataforma no cuentan", () => {
+  assertEquals(reason(base({ hangoutLink: undefined, description: "https://teams.microsoft.com.evil.example/x https://evilzoom.us/j/1" })), "no_video_link");
+  assertEquals(reason(base({ hangoutLink: undefined, description: "http://zoom.us/j/1" })), "no_video_link");
+});
+
+Deno.test("palabra excluida en el título, sin importar tildes ni mayúsculas", () => {
+  const kw = { excludedKeywords: ["médico", "dentista", "[no grabar]"] };
+  assertEquals(reason(base({ summary: "Hora con el MEDICO" }), kw), "excluded_keyword");
+  assertEquals(reason(base({ summary: "Control dentista (Zoom)" }), kw), "excluded_keyword");
+  assertEquals(reason(base({ summary: "Cliente X [No grabar]" }), kw), "excluded_keyword");
+  assertEquals(reason(base({ summary: "Reunión con cliente" }), kw), "send");
+});
+
+Deno.test("palabra excluida en la descripción gana aunque haya enlace de Teams", () => {
+  const e = base({ hangoutLink: undefined, description: "Entrevista confidencial https://teams.microsoft.com/l/meetup-join/1" });
+  assertEquals(reason(e, { excludedKeywords: ["confidencial"] }), "excluded_keyword");
+});

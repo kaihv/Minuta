@@ -21,6 +21,7 @@ export interface ActionItem {
   task: string;
   assignee: string | null;
   due_date: string | null;
+  evidence?: string | null;
 }
 
 export interface Summary {
@@ -28,6 +29,7 @@ export interface Summary {
   action_items: ActionItem[];
   decisions: string[];
   topics: string[];
+  discussed_without_agreement?: string[];
 }
 
 export type MeetingStatus = "scheduled" | "recording" | "processing" | "completed" | "failed" | "not_recorded";
