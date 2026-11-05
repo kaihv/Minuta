@@ -1,0 +1,55 @@
+# Configuración de Supabase CLI. Reemplaza project_id por la referencia de tu
+# proyecto (Settings > General > Reference ID) antes de `supabase link`.
+project_id = "TU_PROJECT_REF"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080"]
+
+# `verify_jwt = false` NO deja las funciones abiertas: cada función valida por
+# su cuenta quién llama (supabase/functions/_shared/auth.ts). Se apaga porque
+# varias las llaman Recall, Google o pg_cron, que no traen sesión de Supabase.
+[functions.recall-webhook]
+verify_jwt = false
+
+[functions.google-calendar]
+verify_jwt = false
+
+[functions.auto-record-scheduler]
+verify_jwt = false
+
+[functions.recall-bot]
+verify_jwt = false
+
+[functions.analyze-meeting]
+verify_jwt = false
+
+[functions.meeting-chat]
+verify_jwt = false
+
+[functions.get-recording-url]
+verify_jwt = false
+
+[functions.transcribe-audio]
+verify_jwt = false
+
+[functions.send-webhook]
+verify_jwt = false
+
+[functions.app-info]
+verify_jwt = false
+
+[functions.mcp]
+verify_jwt = false

@@ -1,0 +1,83 @@
+/*
+ * ============================================================
+ *  TEMA DE MINUTA: todos los colores, la letra y los bordes.
+ * ============================================================
+ *
+ * Para cambiar el look de la app solo se toca ESTE archivo (y el nombre y logo
+ * en src/config/brand.ts). Los componentes nunca usan colores a mano: usan
+ * nombres como `bg-primary` o `text-muted-foreground`, que salen de aquí.
+ *
+ * Los colores van en HSL sin "hsl()": "221 83% 53%" = tono, saturación, luz.
+ * Para convertir un color de tu marca (ej. #2563EB) a HSL usa cualquier
+ * conversor "hex to hsl" y pega los tres números.
+ *
+ * Tres capas:
+ *   1. Base clara (:root) y oscura (.dark): fondos, textos, bordes, estados.
+ *   2. Paletas de color principal ([data-color="..."]): cambian solo el
+ *      color de marca. La persona elige una en Ajustes; la de fábrica se
+ *      define en src/config/brand.ts.
+ *   3. Letra y forma: --font-sans y --radius.
+ */
+
+/* ---------- 1. Base clara ---------- */
+:root {
+  --background: 220 20% 98%;         /* fondo de la página */
+  --foreground: 222 47% 11%;         /* texto principal */
+  --surface: 0 0% 100%;              /* tarjetas, listas, campos */
+  --muted: 220 16% 94%;              /* fondos suaves */
+  --muted-foreground: 220 9% 42%;    /* texto secundario */
+  --border: 220 13% 89%;             /* líneas y bordes */
+  --input: 220 13% 82%;              /* borde de los campos */
+
+  --primary: 221 83% 53%;            /* color de marca (azul) */
+  --primary-foreground: 0 0% 100%;   /* texto sobre el color de marca */
+  --ring: var(--primary);            /* contorno de foco del teclado */
+
+  --success: 152 62% 34%;            /* lista, conectado */
+  --warning: 32 90% 40%;             /* procesando, atención */
+  --danger: 0 72% 51%;               /* grabando, errores, borrar */
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 0.75rem;                 /* redondeo de tarjetas y botones */
+  --shadow-card: 0 1px 2px hsl(220 30% 20% / 0.04), 0 1px 3px hsl(220 30% 20% / 0.06);
+}
+
+/* ---------- 1b. Base oscura ---------- */
+.dark {
+  --background: 222 30% 8%;
+  --foreground: 210 20% 96%;
+  --surface: 222 25% 12%;
+  --muted: 222 20% 16%;
+  --muted-foreground: 218 12% 65%;
+  --border: 222 18% 20%;
+  --input: 222 15% 30%;
+
+  --primary: 217 91% 64%;
+  --primary-foreground: 222 47% 11%;
+
+  --success: 152 55% 52%;
+  --warning: 38 92% 58%;
+  --danger: 0 84% 65%;
+  --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3);
+}
+
+/* ---------- 2. Paletas de color principal ----------
+ * Para agregar una: copia un bloque, cámbiale el nombre y los colores, y
+ * agrégala a COLOR_OPTIONS en src/config/brand.ts.                          */
+[data-color="azul"] { --primary: 221 83% 53%; --primary-foreground: 0 0% 100%; }
+.dark[data-color="azul"] { --primary: 217 91% 64%; --primary-foreground: 222 47% 11%; }
+
+[data-color="verde"] { --primary: 160 84% 30%; --primary-foreground: 0 0% 100%; }
+.dark[data-color="verde"] { --primary: 158 64% 52%; --primary-foreground: 165 60% 8%; }
+
+[data-color="violeta"] { --primary: 262 70% 55%; --primary-foreground: 0 0% 100%; }
+.dark[data-color="violeta"] { --primary: 258 90% 74%; --primary-foreground: 262 50% 12%; }
+
+[data-color="naranjo"] { --primary: 22 92% 46%; --primary-foreground: 0 0% 100%; }
+.dark[data-color="naranjo"] { --primary: 27 96% 61%; --primary-foreground: 20 60% 10%; }
+
+[data-color="rojo"] { --primary: 350 75% 46%; --primary-foreground: 0 0% 100%; }
+.dark[data-color="rojo"] { --primary: 350 89% 68%; --primary-foreground: 350 50% 10%; }
+
+[data-color="grafito"] { --primary: 222 47% 14%; --primary-foreground: 0 0% 100%; }
+.dark[data-color="grafito"] { --primary: 210 20% 92%; --primary-foreground: 222 47% 11%; }
